@@ -7,13 +7,6 @@ import java.util.List;
 import java.util.Set;
 
 public class HiveFunctionsPlugin implements Plugin {
-    private final FunctionRegistry functionRegistry;
-
-    @Inject
-    public HiveFunctionsPlugin(FunctionRegistry functionRegistry) {
-        this.functionRegistry = functionRegistry;
-    }
-
     @Override
     public Set<Class<?>> getFunctions() {
         return Set.of();

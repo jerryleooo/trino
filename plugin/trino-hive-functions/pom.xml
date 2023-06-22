@@ -122,11 +122,6 @@
             <artifactId>trino-memory</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.sonatype.sisu</groupId>
-            <artifactId>sisu-inject-bean</artifactId>
-            <version>386-SNAPSHOT</version>
-        </dependency>
     </dependencies>
 
 </project>

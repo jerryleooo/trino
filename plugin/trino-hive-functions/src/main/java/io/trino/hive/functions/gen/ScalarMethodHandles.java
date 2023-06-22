@@ -18,6 +18,8 @@ import io.airlift.bytecode.MethodDefinition;
 import io.airlift.bytecode.Parameter;
 import io.airlift.bytecode.ParameterizedType;
 import io.airlift.bytecode.expression.BytecodeExpression;
+import io.trino.spi.TrinoException;
+import io.trino.spi.function.ScalarFunctionImplementation;
 import io.trino.spi.function.Signature;
 import io.trino.spi.predicate.Primitives;
 import io.trino.spi.type.TypeManager;
@@ -86,7 +88,7 @@ public final class ScalarMethodHandles
 
         // Step 2: Declare method
         Parameter[] declareParameters = new Parameter[argumentTypes.size() + 1];
-        declareParameters[0] = arg("invoker", ScalarFunctionInvoker.class);
+        declareParameters[0] = arg("invoker", ScalarFunctionImplementation.class);
         for (int i = 0; i < argumentTypes.size(); i++) {
             declareParameters[i + 1] = arg("input_" + i, argumentJavaTypes.get(i));
         }
@@ -115,10 +117,15 @@ public final class ScalarMethodHandles
 
         // Step 5: Lookup MethodHandle
         Class<?>[] lookupClasses = new Class[argumentTypes.size() + 1];
-        lookupClasses[0] = ScalarFunctionInvoker.class;
+        lookupClasses[0] = ScalarFunctionImplementation.class;
         for (int i = 0; i < argumentTypes.size(); i++) {
             lookupClasses[i + 1] = Primitives.wrap(typeManager.getType(argumentTypes.get(i)).getJavaType());
         }
-        return lookup().unreflect(generatedClass.getName(), lookupClasses);
+        try {
+            return lookup().unreflect(generatedClass.getMethod(METHOD_NAME, lookupClasses));
+        }
+        catch (IllegalAccessException | NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

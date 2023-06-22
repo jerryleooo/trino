@@ -13,13 +13,25 @@
  */
 package io.trino.hive.functions;
 
+import io.trino.hive.functions.gen.ScalarMethodHandles;
 import io.trino.spi.function.*;
+import io.trino.spi.type.TypeManager;
 
 import javax.inject.Inject;
+import java.lang.invoke.MethodHandle;
 import java.util.Map;
 import java.util.Optional;
 
 public class HiveFunctionProvider implements FunctionProvider {
+
+    private TypeManager typeManager;
+
+    @Inject
+    public HiveFunctionProvider(TypeManager typeManager)
+    {
+        this.typeManager = typeManager;
+    }
+
     @Override
     public ScalarFunctionImplementation getScalarFunctionImplementation(
             FunctionId functionId,
@@ -27,34 +39,14 @@ public class HiveFunctionProvider implements FunctionProvider {
             FunctionDependencies functionDependencies,
             InvocationConvention invocationConvention)
     {
-        Optional<Signature> signature = FunctionRegistry.getSignature(boundSignature.getName());
+        Signature signature = FunctionRegistry.getSignature(boundSignature.getName());
         return getHiveScalarFunctionImplementation(signature);
     }
 
     private ScalarFunctionImplementation getHiveScalarFunctionImplementation(Signature signature)
     {
         // construct a SqlScalarFunction instance and call `specialize`
-        ScalarFunctionImplementation.builder().methodHandle()
-        return null;
-    }
-
-    public static HiveScalarFunction createHiveScalarFunction(Class<?> cls, QualifiedObjectName name, List<TypeSignature> argumentTypes, TypeManager typeManager)
-    {
-        HiveScalarFunctionInvoker invoker = createFunctionInvoker(cls, name, argumentTypes, typeManager);
-        MethodHandle methodHandle = ScalarMethodHandles.generateUnbound(invoker.getSignature(), typeManager).bindTo(invoker);
-        Signature signature = invoker.getSignature();
-        FunctionMetadata functionMetadata = new FunctionMetadata(name,
-                signature.getArgumentTypes(),
-                signature.getReturnType(),
-                SCALAR,
-                FunctionImplementationType.JAVA,
-                true,
-                true);
-        InvocationConvention invocationConvention = new InvocationConvention(
-                signature.getArgumentTypes().stream().map(t -> BOXED_NULLABLE).collect(toImmutableList()),
-                InvocationConvention.InvocationReturnConvention.NULLABLE_RETURN,
-                false);
-        JavaScalarFunctionImplementation implementation = new HiveScalarFunctionImplementation(methodHandle, invocationConvention);
-        return new HiveScalarFunction(functionMetadata, signature, name.getObjectName(), implementation);
+        MethodHandle methodHandle = ScalarMethodHandles.generateUnbound(signature, typeManager);
+        return ScalarFunctionImplementation.builder().methodHandle(methodHandle).build();
     }
 }

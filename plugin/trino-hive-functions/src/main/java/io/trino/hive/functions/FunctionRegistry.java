@@ -193,21 +193,15 @@ public final class FunctionRegistry {
         return system.getCurrentFunctionNames();
     }
 
-    public static Optional<Signature> getSignature(String functionName) {
-        if (functions.contains(functionName)) {
-            try {
-                Class<?> functionClass = getFunctionInfo(functionName).getFunctionClass();
-                return Optional.of(
-                        Signature.builder()
-                                .name(functionName)
-                                .variableArity().build());
-            }
-            catch (SemanticException | NullPointerException e) {
-                LOG.error("Class of function " + functionName + " not found", e);
-                return Optional.empty();
-            }
-        } else {
-            return Optional.empty();
+    public static Signature getSignature(String functionName) {
+        try {
+            Class<?> functionClass = getFunctionInfo(functionName).getFunctionClass();
+            return
+                    Signature.builder()
+                            .name(functionName)
+                            .variableArity().build();
+        } catch (SemanticException | NullPointerException e) {
+            throw new RuntimeException("No function named " + functionName);
         }
     }
 }
